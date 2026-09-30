@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>גלגל המזל והמשימות</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #E9EFF8;
+    --card: #FFFFFF;
+    --ink: #14213D;
+    --muted: #55627F;
+    --line: #D3DCEA;
+    --field: #F6F9FD;
+    --blue: #2A5CAA;
+    --orange: #FF7A2F;
+    --rim: #1B2E57;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E1730;
+      --card: #172447;
+      --ink: #EDF2FB;
+      --muted: #A5B2CE;
+      --line: #2B3B66;
+      --field: #101B38;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0E1730;
+    --card: #172447;
+    --ink: #EDF2FB;
+    --muted: #A5B2CE;
+    --line: #2B3B66;
+    --field: #101B38;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Heebo", "Assistant", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { width: 100%; max-width: 1100px; margin: 0 auto; padding: clamp(12px, 4vw, 20px) clamp(10px, 4vw, 16px) 8px; flex: 1; }
+
+  .top { text-align: center; margin-bottom: clamp(10px, 3vw, 18px); }
+  .top h1 { margin: 0; font-size: clamp(20px, 6vw, 40px); font-weight: 900; letter-spacing: -0.01em; line-height: 1.2; }
+  .top .lead { margin: 6px 0 0; color: var(--muted); font-size: clamp(13px, 2.6vw, 17px); }
+
+  .stage-col { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 2.5vw, 16px); max-width: 460px; margin: 0 auto; }
+  .stage { position: relative; width: min(100%, 420px, 62vh, 62dvh); aspect-ratio: 1; border-radius: 50%; box-shadow: 0 22px 44px -16px rgba(10, 20, 45, 0.55); }
+  .stage canvas { width: 100%; height: 100%; display: block; }
+
+  .controls-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; width: 100%; }
+
+  .settings-wrap {
+    display: grid; grid-template-rows: 0fr;
+    max-width: 620px; margin: 0 auto; width: 100%;
+    transition: grid-template-rows 0.28s ease;
+  }
+  .settings-wrap.open { grid-template-rows: 1fr; }
+  .settings-wrap > .panel-inner { overflow: hidden; min-height: 0; }
+  .settings-wrap .panel { margin-top: 16px; }
+
+  .pointer {
+    position: absolute; top: -3.4%; left: 50%; width: 9.5%; z-index: 2;
+    transform: translateX(-50%); transform-origin: 50% 28%;
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.35));
+    pointer-events: none;
+  }
+  .pointer.settle { transition: transform 0.3s cubic-bezier(.3, 1.6, .5, 1); }
+
+  .hub {
+    position: absolute; top: 50%; left: 50%; width: 17%; aspect-ratio: 1; z-index: 2;
+    transform: translate(-50%, -50%);
+    border-radius: 50%; border: 5px solid var(--rim);
+    background: var(--card); color: var(--ink);
+    font-family: inherit; font-weight: 900; font-size: clamp(13px, 2.6vw, 20px);
+    cursor: pointer; padding: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    transition: transform 0.12s ease;
+  }
+  .hub:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.05); }
+  .hub:active:not(:disabled) { transform: translate(-50%, -50%) scale(0.95); }
+  .hub:disabled { cursor: default; opacity: 0.85; }
+
+  .btn {
+    font-family: inherit; font-weight: 700; font-size: 16px;
+    border-radius: 12px; border: 2px solid transparent; padding: 11px 18px;
+    cursor: pointer; transition: transform 0.1s ease, background-color 0.15s ease, opacity 0.15s ease;
+  }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.spin {
+    background: var(--orange); color: #14213D; font-weight: 900;
+    font-size: clamp(15px, 4.4vw, 26px); padding: clamp(10px, 3vw, 14px) clamp(20px, 7vw, 44px); border-radius: 999px;
+    box-shadow: 0 8px 0 #C4531A, 0 14px 22px -8px rgba(0, 0, 0, 0.4);
+    margin-bottom: 8px;
+    white-space: nowrap;
+  }
+  .btn.spin:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 4px 0 #C4531A, 0 8px 14px -8px rgba(0, 0, 0, 0.4); }
+  .btn.primary { background: var(--blue); color: #fff; }
+  .btn.primary:hover:not(:disabled) { background: #234C90; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.ghost:hover:not(:disabled) { background: var(--field); }
+
+  :focus-visible { outline: 3px solid #FFB23F; outline-offset: 3px; }
+
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: clamp(14px, 4vw, 20px); display: flex; flex-direction: column; gap: 16px; box-shadow: 0 10px 30px -18px rgba(10, 20, 45, 0.35); }
+  .panel h2 { margin: 0; font-size: clamp(15px, 3.6vw, 18px); font-weight: 700; }
+  .field-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 12px; }
+  .field-head h2 { flex: 1 1 auto; min-width: 0; }
+  .count { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  textarea {
+    width: 100%; min-height: 200px; resize: vertical; direction: rtl; text-align: right;
+    font-family: inherit; font-size: 17px; line-height: 1.6; color: var(--ink);
+    background: var(--field); border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  }
+  textarea:focus { border-color: var(--blue); outline: none; }
+  textarea:focus-visible { outline: 3px solid #FFB23F; outline-offset: 2px; }
+  .hint { margin: 0; font-size: 14px; color: var(--muted); }
+  .hint.dirty { color: #C4531A; font-weight: 700; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hint.dirty { color: #FFB23F; } }
+  :root[data-theme="dark"] .hint.dirty { color: #FFB23F; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .check { display: flex; align-items: center; gap: 10px; font-size: 16px; cursor: pointer; }
+  .check input { width: 22px; height: 22px; accent-color: var(--blue); cursor: pointer; margin: 0; }
+
+  .history h3 { margin: 0 0 8px; font-size: 16px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .link-btn { background: none; border: none; color: var(--muted); font-family: inherit; font-size: 14px; cursor: pointer; text-decoration: underline; padding: 4px; }
+  .history ol { margin: 0; padding: 0 22px 0 0; max-height: 170px; overflow-y: auto; }
+  .history li { padding: 3px 0; overflow-wrap: anywhere; }
+  .history .empty { color: var(--muted); font-size: 14px; margin: 0; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+  /* winner dialog */
+  .overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(8, 14, 32, 0.6); }
+  .overlay[hidden] { display: none; }
+  .dialog {
+    width: min(100%, 460px); background: var(--card); color: var(--ink); border-radius: 24px;
+    padding: 0 24px 26px; text-align: center; overflow: hidden;
+    box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.7);
+    animation: pop 0.45s cubic-bezier(.2, 1.4, .4, 1);
+  }
+  @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .dialog-bar { height: 14px; margin: 0 -24px 22px; background: var(--blue); }
+  .dialog h2 { margin: 0; font-size: 18px; font-weight: 500; color: var(--muted); }
+  .winner { margin: 10px 0 8px; font-size: clamp(32px, 9vw, 52px); font-weight: 900; line-height: 1.2; overflow-wrap: anywhere; }
+  .dialog .note { margin: 0 0 18px; color: var(--muted); font-size: 15px; min-height: 22px; }
+  .dialog .btn { min-width: 160px; font-size: 18px; }
+
+  #confetti { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 60; pointer-events: none; }
+
+  /* signature */
+  .signature {
+    direction: rtl; text-align: center; font-size: 12px; line-height: 1.8; padding: 18px 12px; margin-top: 32px;
+    opacity: 0.72; font-family: inherit; color: inherit;
+    border-top: 1px solid currentColor;
+    border-color: color-mix(in srgb, currentColor 15%, transparent);
+  }
+  .signature .sig-links { display: block; }
+  .signature a { color: inherit; text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 1px; }
+  .signature a:hover { opacity: 1; }
+  .signature .sig-sep { margin: 0 6px; opacity: 0.5; }
+  @media (max-width: 480px) {
+    .signature { font-size: 11px; }
+    .signature .sig-sep { display: none; }
+    .signature a { display: block; margin: 3px 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dialog { animation: none; }
+    .pointer.settle { transition: none; }
+  }
+
+  /* מארח נמוך (למשל תיבת תצוגה קטנה באתר) — מכווצים אנכית כדי שהגלגל
+     והכפתורים יישארו גלויים בלי גלילה; פאנל העריכה ממילא מוצג רק לפי בקשה. */
+  @media (max-height: 700px) {
+    .signature { display: none; }
+  }
+  @media (max-height: 480px) {
+    .app { padding-top: 8px; }
+    .top { margin-bottom: 6px; }
+    .top .lead { display: none; }
+    .stage { width: min(100%, 420px, 50vh, 50dvh); }
+  }
+  @media (max-height: 480px) and (min-width: 700px) {
+    .top h1 { font-size: clamp(16px, 3.4vw, 22px); }
+  }
+  .settings-wrap.open .panel { gap: 12px; padding: clamp(12px, 3.6vw, 20px); }
+  @media (max-height: 560px) {
+    .settings-wrap textarea { min-height: 90px; }
+    .settings-wrap .history { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>גלגל המזל והמשימות</h1>
+    <p class="lead">סובבו את הגלגל, או לחצו על "עריכת האפשרויות" כדי לשנות את הרשימה.</p>
+  </header>
+
+  <section class="stage-col" aria-label="הגלגל">
+    <div class="stage" id="stage">
+      <canvas id="wheel" role="img" aria-label="גלגל מזל"></canvas>
+      <svg class="pointer" id="pointer" viewBox="0 0 40 58" aria-hidden="true">
+        <path d="M20 56 L5.5 25 A16.5 16.5 0 1 1 34.5 25 Z" fill="#FF7A2F" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="20" cy="19" r="5.5" fill="#FFFFFF"/>
+      </svg>
+      <button class="hub" id="hubBtn" type="button" aria-label="סובב את הגלגל">סובב</button>
+    </div>
+    <div class="controls-row">
+      <button class="btn spin" id="spinBtn" type="button">סובב את הגלגל</button>
+      <button class="btn ghost" id="settingsToggle" type="button" aria-expanded="false" aria-controls="settingsPanel">עריכת האפשרויות</button>
+    </div>
+  </section>
+
+  <div class="settings-wrap" id="settingsWrap">
+    <div class="panel-inner">
+      <section class="panel" id="settingsPanel" aria-label="ניהול הפלחים">
+        <div>
+          <div class="field-head">
+            <h2><label for="list">האפשרויות, שורה לכל פלח</label></h2>
+            <span class="count" id="count"></span>
+          </div>
+          <textarea id="list" spellcheck="false" placeholder="הקלידו כאן שמות, אפשרויות או משימות"></textarea>
+          <p class="hint" id="hint" aria-live="polite">כל שורה בתיבה היא פלח בגלגל.</p>
+        </div>
+
+        <div class="row">
+          <button class="btn primary" id="updateBtn" type="button">עדכן גלגל</button>
+          <button class="btn ghost" id="restoreBtn" type="button">החזר את כל הפלחים</button>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" id="removeChk">
+          <span>הסר פלח לאחר שנבחר</span>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" id="soundChk" checked>
+          <span>צליל תקתוק</span>
+        </label>
+
+        <div class="history">
+          <h3>
+            <span>נבחרו עד כה</span>
+            <button class="link-btn" id="clearHistory" type="button" hidden>נקה</button>
+          </h3>
+          <p class="empty" id="historyEmpty">עוד לא הוגרל כלום.</p>
+          <ol id="historyList" reversed hidden></ol>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer class="signature">
+    <span class="sig-name">© שירה רוט זליקוביץ · הוראה יצירתית עם AI</span>
+    <span class="sig-links">
+      <a href="https://wa.me/972523930628" target="_blank" rel="noopener">ווטסאפ</a>
+      <span class="sig-sep">·</span>
+      <a href="https://www.lomdot.org/" target="_blank" rel="noopener">האתר שלי</a>
+      <span class="sig-sep">·</span>
+      <a href="https://www.lomdot.org/" target="_blank" rel="noopener">להזמנת סדנאות בינה מלאכותית</a>
+    </span>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="winLabel">
+    <div class="dialog-bar" id="winBar"></div>
+    <h2 id="winLabel">הגלגל בחר</h2>
+    <p class="winner" id="winText"></p>
+    <p class="note" id="winNote"></p>
+    <button class="btn primary" id="closeBtn" type="button">המשך</button>
+  </div>
+</div>
+
+<canvas id="confetti" aria-hidden="true"></canvas>
+<div class="sr-only" id="status" aria-live="assertive"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var TAU = Math.PI * 2;
+  var MAX_SEGMENTS = 100;
+  var STORE_KEY = 'wheel-tasks-v1';
+  var DEFAULTS = ['אפשרות 1', 'אפשרות 2', 'אפשרות 3', 'אפשרות 4', 'אפשרות 5', 'אפשרות 6'];
+  var PALETTE = ['#2A5CAA', '#E4572E', '#16907F', '#F2A900', '#7B4FBF', '#D6336C', '#3E9B3F', '#0F86C6', '#C2410C', '#5B6C8F'];
+  var CONFETTI_COLORS = ['#2A5CAA', '#E4572E', '#16907F', '#F2A900', '#7B4FBF', '#D6336C', '#3E9B3F', '#FFD23F', '#FFFFFF'];
+  var RIM = '#1B2E57';
+
+  var canvas = $('wheel'), ctx = canvas.getContext('2d');
+  var pointer = $('pointer');
+  var listEl = $('list'), hintEl = $('hint'), countEl = $('count');
+  var spinBtn = $('spinBtn'), hubBtn = $('hubBtn'), updateBtn = $('updateBtn'), restoreBtn = $('restoreBtn');
+  var removeChk = $('removeChk'), soundChk = $('soundChk');
+  var overlay = $('overlay'), closeBtn = $('closeBtn');
+  var settingsToggle = $('settingsToggle'), settingsWrap = $('settingsWrap');
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var segments = [], colors = [], originalList = DEFAULTS.slice();
+  var rot = 0, spinning = false, dirty = false, kick = 0;
+  var lastIdx = 0, lastTick = 0, pendingRemove = -1;
+  var winners = [];
+
+  /* ---------- helpers ---------- */
+  function mod(a, n) { return ((a % n) + n) % n; }
+  function parseLines(v) {
+    return v.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, MAX_SEGMENTS);
+  }
+  function luminance(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    var c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(function (v) {
+      v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  function textOn(hex) { return luminance(hex) > 0.4 ? '#14213D' : '#FFFFFF'; }
+  function computeColors(n) {
+    var out = [];
+    for (var i = 0; i < n; i++) {
+      var c = PALETTE[i % PALETTE.length];
+      if (i > 0 && c === out[i - 1]) c = PALETTE[(i + 1) % PALETTE.length];
+      if (i === n - 1 && n > 1) {
+        var k = 0;
+        while ((c === out[0] || c === out[i - 1]) && k < PALETTE.length) { c = PALETTE[(i + 1 + k) % PALETTE.length]; k++; }
+      }
+      out.push(c);
+    }
+    return out;
+  }
+  function idxAt(r) {
+    var n = segments.length; if (!n) return -1;
+    var arc = TAU / n;
+    var a = mod(1.5 * Math.PI - r, TAU);
+    return Math.min(n - 1, Math.floor(a / arc));
+  }
+  function fontStr(px) { return '700 ' + px + 'px Heebo, Assistant, system-ui, sans-serif'; }
+
+  /* ---------- storage (best effort) ---------- */
+  function save() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ list: originalList, remove: removeChk.checked, sound: soundChk.checked }));
+    } catch (e) {}
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      var d = JSON.parse(raw);
+      if (d && Array.isArray(d.list) && d.list.length) originalList = d.list.slice(0, MAX_SEGMENTS).map(String);
+      if (d && typeof d.remove === 'boolean') removeChk.checked = d.remove;
+      if (d && typeof d.sound === 'boolean') soundChk.checked = d.sound;
+    } catch (e) {}
+  }
+
+  /* ---------- wheel drawing ---------- */
+  function draw() {
+    var size = canvas.clientWidth;
+    if (!size) return;
+    var dpr = window.devicePixelRatio || 1;
+    var px = Math.round(size * dpr);
+    if (canvas.width !== px) { canvas.width = px; canvas.height = px; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+
+    var c = size / 2;
+    var rimW = size * 0.05;
+    var R = c - rimW - size * 0.006;
+    var n = segments.length;
+
+    // outer rim
+    ctx.beginPath(); ctx.arc(c, c, c - 0.5, 0, TAU); ctx.fillStyle = RIM; ctx.fill();
+
+    // rim lights, they alternate while the wheel is turning
+    var dots = 28;
+    for (var d = 0; d < dots; d++) {
+      var da = (d / dots) * TAU;
+      var lit = spinning ? ((d + Math.floor(rot * 5)) % 2 === 0) : true;
+      ctx.beginPath();
+      ctx.arc(c + Math.cos(da) * (c - rimW / 2), c + Math.sin(da) * (c - rimW / 2), size * 0.0095, 0, TAU);
+      ctx.fillStyle = lit ? '#FFF6D6' : 'rgba(255,246,214,0.28)';
+      ctx.fill();
+    }
+
+    if (!n) {
+      ctx.beginPath(); ctx.arc(c, c, R, 0, TAU); ctx.fillStyle = '#DCE5F3'; ctx.fill();
+      ctx.fillStyle = '#14213D'; ctx.font = fontStr(size * 0.045);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
+      ctx.fillText('הוסיפו אפשרויות ולחצו על עדכן גלגל', c, c + size * 0.16, R * 1.4);
+      canvas.setAttribute('aria-label', 'גלגל מזל ריק');
+      return;
+    }
+
+    var arc = TAU / n;
+    var hubR = size * 0.085;
+    var maxFs = size * 0.06, minFs = size * 0.026;
+    var maxLen = R - size * 0.045 - (hubR + size * 0.02);
+    var midR = R * 0.62;
+    var fs = Math.max(minFs, Math.min(maxFs, 2 * midR * Math.sin(Math.min(arc, Math.PI) / 2) * 0.5));
+
+    for (var i = 0; i < n; i++) {
+      var a0 = rot + i * arc;
+      ctx.beginPath();
+      if (n === 1) { ctx.arc(c, c, R, 0, TAU); }
+      else { ctx.moveTo(c, c); ctx.arc(c, c, R, a0, a0 + arc); ctx.closePath(); }
+      ctx.fillStyle = colors[i]; ctx.fill();
+      ctx.lineWidth = Math.max(1.5, size * 0.004); ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke();
+
+      ctx.save();
+      ctx.translate(c, c);
+      ctx.rotate(a0 + arc / 2);
+      ctx.fillStyle = textOn(colors[i]);
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.direction = 'rtl';
+      var label = segments[i], f = fs;
+      ctx.font = fontStr(f);
+      var w = ctx.measureText(label).width;
+      if (w > maxLen) { f = Math.max(minFs * 0.75, f * maxLen / w); ctx.font = fontStr(f); w = ctx.measureText(label).width; }
+      if (w > maxLen) {
+        var t = label;
+        while (t.length > 1 && ctx.measureText(t + '…').width > maxLen) t = t.slice(0, -1);
+        label = t + '…';
+      }
+      ctx.fillText(label, R - size * 0.045, 0);
+      ctx.restore();
+    }
+    canvas.setAttribute('aria-label', 'גלגל מזל עם ' + n + ' פלחים');
+  }
+
+  function updateCount() {
+    var n = segments.length;
+    countEl.textContent = n === 0 ? 'אין פלחים' : n === 1 ? 'פלח אחד' : n + ' פלחים';
+    var off = spinning || n === 0;
+    spinBtn.disabled = off; hubBtn.disabled = off;
+  }
+  function setDirty(v) {
+    dirty = v;
+    hintEl.className = 'hint' + (v ? ' dirty' : '');
+    hintEl.textContent = v ? 'יש שינויים שעוד לא עודכנו בגלגל. לחצו על עדכן גלגל.' : 'כל שורה בתיבה היא פלח בגלגל.';
+  }
+  function setBusy(b) {
+    spinBtn.textContent = b ? 'מסתובב' : 'סובב את הגלגל';
+    updateBtn.disabled = b; restoreBtn.disabled = b; listEl.readOnly = b;
+    updateCount();
+  }
+
+  function applyList(setOriginal) {
+    segments = parseLines(listEl.value);
+    if (setOriginal) originalList = segments.slice();
+    listEl.value = segments.join('\n');
+    colors = computeColors(segments.length);
+    setDirty(false);
+    updateCount();
+    draw();
+    save();
+  }
+
+  /* ---------- audio ---------- */
+  var audioCtx = null;
+  function initAudio() {
+    try {
+      if (!audioCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+  }
+  function playTick() {
+    if (!soundChk.checked || !audioCtx) return;
+    try {
+      var t = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1050 + Math.random() * 140, t);
+      osc.frequency.exponentialRampToValueAtTime(480, t + 0.045);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.08, t + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.055);
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.start(t); osc.stop(t + 0.07);
+    } catch (e) {}
+  }
+  function playFanfare() {
+    if (!soundChk.checked || !audioCtx) return;
+    try {
+      var notes = [523.25, 659.25, 783.99, 1046.5];
+      notes.forEach(function (f, i) {
+        var t = audioCtx.currentTime + i * 0.1;
+        var osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+        osc.type = 'sine'; osc.frequency.setValueAtTime(f, t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.11, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + (i === notes.length - 1 ? 0.7 : 0.25));
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.8);
+      });
+    } catch (e) {}
+  }
+
+  /* ---------- spin ---------- */
+  function spin() {
+    if (spinning) return;
+    if (dirty) applyList(true);
+    if (!segments.length) return;
+    initAudio();
+    spinning = true; setBusy(true);
+    pointer.classList.remove('settle');
+
+    var start = rot;
+    var total = (5 + Math.floor(Math.random() * 3)) * TAU + Math.random() * TAU;
+    var dur = reduced ? 2500 : 5200 + Math.random() * 1800;
+    var t0 = performance.now();
+    lastIdx = idxAt(rot);
+
+    function frame(now) {
+      var t = Math.min(1, (now - t0) / dur);
+      var e = 1 - Math.pow(1 - t, 4); // ease out
+      rot = start + total * e;
+
+      var idx = idxAt(rot);
+      if (idx !== lastIdx) {
+        lastIdx = idx;
+        if (now - lastTick > 28) { playTick(); lastTick = now; }
+        if (!reduced) kick = 1;
+      }
+      kick *= 0.82;
+      pointer.style.transform = 'translateX(-50%) rotate(' + (-kick * 26) + 'deg)';
+      draw();
+
+      if (t < 1) { requestAnimationFrame(frame); }
+      else { finish(); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function finish() {
+    rot = mod(rot, TAU);
+    spinning = false;
+    kick = 0;
+    pointer.classList.add('settle');
+    pointer.style.transform = 'translateX(-50%) rotate(0deg)';
+    draw();
+    setBusy(false);
+
+    var idx = idxAt(rot);
+    var label = segments[idx];
+    winners.unshift(label);
+    renderHistory();
+    pendingRemove = removeChk.checked ? idx : -1;
+    showWinner(label, colors[idx]);
+    playFanfare();
+    launchConfetti();
+  }
+
+  /* ---------- winner dialog ---------- */
+  var lastFocus = null;
+  function showWinner(label, color) {
+    $('winText').textContent = label;
+    $('winBar').style.background = color;
+    $('winNote').textContent = pendingRemove >= 0 ? 'הפלח יוסר מהגלגל כשתמשיכו.' : '';
+    closeBtn.textContent = pendingRemove >= 0 ? 'הסר והמשך' : 'המשך';
+    $('status').textContent = 'הגלגל בחר: ' + label;
+    lastFocus = document.activeElement;
+    overlay.hidden = false;
+    closeBtn.focus();
+  }
+  function closeWinner() {
+    if (overlay.hidden) return;
+    overlay.hidden = true;
+    if (pendingRemove >= 0 && pendingRemove < segments.length) {
+      segments.splice(pendingRemove, 1);
+      listEl.value = segments.join('\n');
+      colors = computeColors(segments.length);
+      updateCount();
+      draw();
+    }
+    pendingRemove = -1;
+    if (lastFocus && lastFocus.focus && !lastFocus.disabled) lastFocus.focus(); else spinBtn.focus();
+  }
+  closeBtn.addEventListener('click', closeWinner);
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) closeWinner(); });
+  document.addEventListener('keydown', function (e) {
+    if (overlay.hidden) return;
+    if (e.key === 'Escape') { closeWinner(); }
+    else if (e.key === 'Tab') { e.preventDefault(); closeBtn.focus(); }
+  });
+
+  /* ---------- history ---------- */
+  function renderHistory() {
+    var ol = $('historyList');
+    ol.innerHTML = '';
+    winners.forEach(function (w) { var li = document.createElement('li'); li.textContent = w; ol.appendChild(li); });
+    var has = winners.length > 0;
+    ol.hidden = !has; $('historyEmpty').hidden = has; $('clearHistory').hidden = !has;
+  }
+  $('clearHistory').addEventListener('click', function () { winners = []; renderHistory(); });
+
+  /* ---------- confetti ---------- */
+  var confettiRaf = 0;
+  function launchConfetti() {
+    var cv = $('confetti'), cx = cv.getContext('2d');
+    var dpr = window.devicePixelRatio || 1, W = window.innerWidth, H = window.innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cancelAnimationFrame(confettiRaf);
+
+    var count = reduced ? 60 : 240, parts = [];
+    var sc = Math.min(1.4, Math.max(0.7, H / 800));
+    for (var i = 0; i < count; i++) {
+      var side = i % 3, x, y, vx, vy, ang, sp;
+      sp = (14 + Math.random() * 12) * sc;
+      if (side === 0) { x = 0; y = H; ang = -(50 + Math.random() * 30) * Math.PI / 180; vx = Math.cos(ang) * sp; vy = Math.sin(ang) * sp; }
+      else if (side === 1) { x = W; y = H; ang = -(130 - Math.random() * 30) * Math.PI / 180; vx = Math.cos(ang) * sp; vy = Math.sin(ang) * sp; }
+      else { x = Math.random() * W; y = -20 - Math.random() * H * 0.4; vx = (Math.random() - 0.5) * 3; vy = 2 + Math.random() * 3; }
+      parts.push({
+        x: x, y: y, vx: vx, vy: vy,
+        w: 7 + Math.random() * 7, h: 4 + Math.random() * 6,
+        rot: Math.random() * TAU, vr: (Math.random() - 0.5) * 0.3,
+        tilt: Math.random() * TAU, vt: 0.08 + Math.random() * 0.12,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]
+      });
+    }
+    var last = performance.now(), begin = last;
+    function step(now) {
+      var dt = Math.min(2.5, (now - last) / 16.67); last = now;
+      cx.clearRect(0, 0, W, H);
+      var alive = 0;
+      for (var j = 0; j < parts.length; j++) {
+        var p = parts[j];
+        p.vy += 0.34 * dt; p.vx *= Math.pow(0.988, dt); p.vy *= Math.pow(0.99, dt);
+        p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.tilt += p.vt * dt;
+        if (p.y > H + 30) continue;
+        alive++;
+        cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot);
+        cx.scale(1, Math.cos(p.tilt));
+        cx.fillStyle = p.color; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        cx.restore();
+      }
+      if (alive && now - begin < 7000) { confettiRaf = requestAnimationFrame(step); }
+      else { cx.clearRect(0, 0, W, H); }
+    }
+    confettiRaf = requestAnimationFrame(step);
+  }
+
+  /* ---------- events ---------- */
+  function setSettingsOpen(open) {
+    settingsWrap.classList.toggle('open', open);
+    settingsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    settingsToggle.textContent = open ? 'סגירת העריכה' : 'עריכת האפשרויות';
+    if (open) { settingsWrap.removeAttribute('inert'); listEl.focus(); }
+    else { settingsWrap.setAttribute('inert', ''); }
+  }
+  settingsWrap.setAttribute('inert', '');
+  settingsToggle.addEventListener('click', function () {
+    setSettingsOpen(!settingsWrap.classList.contains('open'));
+  });
+
+  spinBtn.addEventListener('click', spin);
+  hubBtn.addEventListener('click', spin);
+  updateBtn.addEventListener('click', function () { applyList(true); });
+  restoreBtn.addEventListener('click', function () {
+    listEl.value = originalList.join('\n');
+    applyList(false);
+  });
+  listEl.addEventListener('input', function () { setDirty(true); });
+  removeChk.addEventListener('change', save);
+  soundChk.addEventListener('change', function () { if (soundChk.checked) initAudio(); save(); });
+
+  if (window.ResizeObserver) { new ResizeObserver(function () { draw(); }).observe(canvas); }
+  else { window.addEventListener('resize', draw); }
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(draw); }
+
+  /* ---------- start ---------- */
+  load();
+  listEl.value = originalList.join('\n');
+  applyList(true);
+  renderHistory();
+})();
+</script>
+</body>
+</html>
