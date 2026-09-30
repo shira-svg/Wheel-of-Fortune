@@ -191,11 +191,13 @@
      והכפתורים יישארו גלויים בלי גלילה; פאנל העריכה ממילא מוצג רק לפי בקשה. */
   @media (max-height: 700px) {
     .signature { display: none; }
-  }
-  @media (max-height: 480px) {
-    .app { padding-top: 8px; }
+    .app { padding-top: 6px; padding-bottom: 0; }
     .top { margin-bottom: 6px; }
     .top .lead { display: none; }
+    .stage-col { gap: 8px; }
+    .stage { width: min(100%, 420px, 56vh, 56dvh); }
+  }
+  @media (max-height: 480px) {
     .stage { width: min(100%, 420px, 50vh, 50dvh); }
   }
   @media (max-height: 480px) and (min-width: 700px) {
